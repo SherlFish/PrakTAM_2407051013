@@ -35,7 +35,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             PrakTAM_2407051013Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // Memanggil screen utama
                     DaftarCharaScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
@@ -45,22 +44,19 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun DaftarCharaScreen(modifier: Modifier = Modifier) {
-    // Column utama yang bisa di-scroll
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(24.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // Melakukan looping (perulangan) untuk menampilkan ke-3 data
         CharaSource.dummyChara.forEach { chara ->
             ItemChara(chara = chara)
-            Spacer(modifier = Modifier.height(32.dp)) // Jarak antar karakter
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-// Fungsi layout untuk masing-masing item karakter (menggantikan DetailScreen di modul)
 @Composable
 fun ItemChara(chara: Chara) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -94,7 +90,7 @@ fun ItemChara(chara: Chara) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { /* Biarkan kosong sementara */ },
+            onClick = { /* Biarin kosong */ },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Rekrut Sekarang")
