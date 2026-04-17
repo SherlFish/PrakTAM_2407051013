@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.praktam_2407051013.model.Chara
@@ -53,7 +52,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PrakTAM_2407051013Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = MaterialTheme.colorScheme.background
+                ) { innerPadding ->
                     DaftarCharaScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
@@ -72,7 +74,7 @@ fun DaftarCharaScreen(modifier: Modifier = Modifier) {
             Text(
                 text = "Karakter Rekomendasi",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary, // Menerapkan warna primary pada judul
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -89,7 +91,7 @@ fun DaftarCharaScreen(modifier: Modifier = Modifier) {
             Text(
                 text = "Daftar Karakter Lengkap",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary, // Menerapkan warna primary pada judul
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
@@ -105,7 +107,10 @@ fun CharaRowItem(chara: Chara) {
     Card(
         modifier = Modifier.width(160.dp),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column {
             Image(
@@ -119,13 +124,12 @@ fun CharaRowItem(chara: Chara) {
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = chara.nama,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleSmall // Menerapkan style typography
                 )
                 Text(
                     text = "Rp ${chara.harga}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    style = MaterialTheme.typography.bodySmall, // Menerapkan style typography
+                    color = MaterialTheme.colorScheme.primary   // Menerapkan warna primary untuk harga
                 )
             }
         }
@@ -172,20 +176,20 @@ fun ItemChara(chara: Chara) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = chara.nama,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium // Menerapkan style typography
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = chara.deskripsi,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyMedium // Menerapkan style typography
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "Harga Sewa: Rp ${chara.harga}",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge, // Menerapkan style typography
+                    color = MaterialTheme.colorScheme.primary   // Menerapkan warna primary untuk harga
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -193,7 +197,10 @@ fun ItemChara(chara: Chara) {
                     onClick = { /* Biarin kosong */ },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Rekrut Sekarang")
+                    Text(
+                        text = "Rekrut Sekarang",
+                        color = MaterialTheme.colorScheme.onPrimary // Teks tombol putih agar kontras
+                    )
                 }
             }
         }
