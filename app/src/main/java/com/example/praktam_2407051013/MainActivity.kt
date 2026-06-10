@@ -60,15 +60,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PrakTAM_2407051013Theme {
-                // 1. [KOMPONEN WAJIB] Membuat penampung state untuk Snackbar
                 val snackbarHostState = remember { SnackbarHostState() }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    // 2. [KOMPONEN WAJIB] Menempelkan wadah SnackbarHost ke dalam Scaffold utama
                     snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
                 ) { innerPadding ->
-                    // Meneruskan snackbarHostState ke dalam halaman Screen utama
                     DaftarCharaScreen(
                         snackbarHostState = snackbarHostState,
                         modifier = Modifier.padding(innerPadding)
@@ -109,7 +106,6 @@ fun DaftarCharaScreen(snackbarHostState: SnackbarHostState, modifier: Modifier =
             )
         }
         items(CharaSource.dummyChara) { chara ->
-            // Meneruskan snackbarHostState ke setiap item karakter
             ItemChara(chara = chara, snackbarHostState = snackbarHostState)
         }
     }
@@ -151,10 +147,8 @@ fun CharaRowItem(chara: Chara) {
 fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
     var isFavorite by remember { mutableStateOf(false) }
 
-    // 3. [KOMPONEN WAJIB] State mutableStateOf(isLoading) untuk mengontrol animasi loading
     var isLoading by remember { mutableStateOf(false) }
 
-    // 4. [KOMPONEN WAJIB] rememberCoroutineScope untuk menjalankan thread asynchronous background
     val coroutineScope = rememberCoroutineScope()
 
     Card(
@@ -206,19 +200,15 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 5. [KOMPONEN WAJIB] Tombol dengan kondisi dinonaktifkan saat loading berlangsung (enabled = !isLoading)
                 Button(
                     onClick = {
-                        // 6. [KOMPONEN WAJIB] Memulai coroutine dengan launch ketika tombol ditekan
                         coroutineScope.launch {
                             isLoading = true
 
-                            // 7. [KOMPONEN WAJIB] Simulasi delay pemrosesan asynchronous selama 2 detik
                             delay(2000)
 
                             isLoading = false
 
-                            // 8. Menampilkan Snackbar feedback setelah operasi background selesai
                             snackbarHostState.showSnackbar("Berhasil merekrut ${chara.nama}!")
                         }
                     },
@@ -226,7 +216,6 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isLoading) {
-                        // 9. [KOMPONEN WAJIB] Menampilkan CircularProgressIndicator di dalam tombol saat loading
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(24.dp),
