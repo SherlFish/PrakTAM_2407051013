@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -25,26 +26,33 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.praktam_2407051013.model.Chara
 import com.example.praktam_2407051013.model.CharaSource
 import com.example.praktam_2407051013.ui.theme.PrakTAM_2407051013Theme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,11 +60,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PrakTAM_2407051013Theme {
+                // 1. [KOMPONEN WAJIB] Membuat penampung state untuk Snackbar
+                val snackbarHostState = remember { SnackbarHostState() }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    containerColor = MaterialTheme.colorScheme.background
+                    // 2. [KOMPONEN WAJIB] Menempelkan wadah SnackbarHost ke dalam Scaffold utama
+                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
                 ) { innerPadding ->
-                    DaftarCharaScreen(modifier = Modifier.padding(innerPadding))
+                    // Meneruskan snackbarHostState ke dalam halaman Screen utama
+                    DaftarCharaScreen(
+                        snackbarHostState = snackbarHostState,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
@@ -64,7 +80,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DaftarCharaScreen(modifier: Modifier = Modifier) {
+fun DaftarCharaScreen(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(24.dp),
@@ -74,10 +90,9 @@ fun DaftarCharaScreen(modifier: Modifier = Modifier) {
             Text(
                 text = "Karakter Rekomendasi",
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary, // Menerapkan warna primary pada judul
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -85,19 +100,17 @@ fun DaftarCharaScreen(modifier: Modifier = Modifier) {
                     CharaRowItem(chara = chara)
                 }
             }
-
             Spacer(modifier = Modifier.height(45.dp))
-
             Text(
                 text = "Daftar Karakter Lengkap",
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary, // Menerapkan warna primary pada judul
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-
         items(CharaSource.dummyChara) { chara ->
-            ItemChara(chara = chara)
+            // Meneruskan snackbarHostState ke setiap item karakter
+            ItemChara(chara = chara, snackbarHostState = snackbarHostState)
         }
     }
 }
@@ -107,10 +120,7 @@ fun CharaRowItem(chara: Chara) {
     Card(
         modifier = Modifier.width(160.dp),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
             Image(
@@ -124,12 +134,13 @@ fun CharaRowItem(chara: Chara) {
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = chara.nama,
-                    style = MaterialTheme.typography.titleSmall // Menerapkan style typography
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "Rp ${chara.harga}",
-                    style = MaterialTheme.typography.bodySmall, // Menerapkan style typography
-                    color = MaterialTheme.colorScheme.primary   // Menerapkan warna primary untuk harga
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -137,8 +148,14 @@ fun CharaRowItem(chara: Chara) {
 }
 
 @Composable
-fun ItemChara(chara: Chara) {
+fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
     var isFavorite by remember { mutableStateOf(false) }
+
+    // 3. [KOMPONEN WAJIB] State mutableStateOf(isLoading) untuk mengontrol animasi loading
+    var isLoading by remember { mutableStateOf(false) }
+
+    // 4. [KOMPONEN WAJIB] rememberCoroutineScope untuk menjalankan thread asynchronous background
+    val coroutineScope = rememberCoroutineScope()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -158,7 +175,6 @@ fun ItemChara(chara: Chara) {
                         .height(200.dp),
                     contentScale = ContentScale.Crop
                 )
-
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
                     modifier = Modifier
@@ -172,35 +188,53 @@ fun ItemChara(chara: Chara) {
                     )
                 }
             }
-
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = chara.nama,
-                    style = MaterialTheme.typography.titleMedium // Menerapkan style typography
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
                     text = chara.deskripsi,
-                    style = MaterialTheme.typography.bodyMedium // Menerapkan style typography
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Text(
                     text = "Harga Sewa: Rp ${chara.harga}",
-                    style = MaterialTheme.typography.bodyLarge, // Menerapkan style typography
-                    color = MaterialTheme.colorScheme.primary   // Menerapkan warna primary untuk harga
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 5. [KOMPONEN WAJIB] Tombol dengan kondisi dinonaktifkan saat loading berlangsung (enabled = !isLoading)
                 Button(
-                    onClick = { /* Biarin kosong */ },
+                    onClick = {
+                        // 6. [KOMPONEN WAJIB] Memulai coroutine dengan launch ketika tombol ditekan
+                        coroutineScope.launch {
+                            isLoading = true
+
+                            // 7. [KOMPONEN WAJIB] Simulasi delay pemrosesan asynchronous selama 2 detik
+                            delay(2000)
+
+                            isLoading = false
+
+                            // 8. Menampilkan Snackbar feedback setelah operasi background selesai
+                            snackbarHostState.showSnackbar("Berhasil merekrut ${chara.nama}!")
+                        }
+                    },
+                    enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Rekrut Sekarang",
-                        color = MaterialTheme.colorScheme.onPrimary // Teks tombol putih agar kontras
-                    )
+                    if (isLoading) {
+                        // 9. [KOMPONEN WAJIB] Menampilkan CircularProgressIndicator di dalam tombol saat loading
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Text("Rekrut Sekarang")
+                    }
                 }
             }
         }
@@ -211,6 +245,6 @@ fun ItemChara(chara: Chara) {
 @Composable
 fun DaftarCharaPreview() {
     PrakTAM_2407051013Theme {
-        DaftarCharaScreen()
+        DaftarCharaScreen(snackbarHostState = remember { SnackbarHostState() })
     }
 }
