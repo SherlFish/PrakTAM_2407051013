@@ -1,25 +1,27 @@
 package com.example.praktam_2407051013.model
-import com.example.praktam_2407051013.R
 
 object CharaSource {
     val dummyChara = listOf(
         Chara(
-            nama = "Dante",
-            deskripsi = "Legendary Devil Hunter",
-            harga = 50000,
-            imageRes = R.drawable.dante
-        ),
-        Chara(
-            nama = "Nero",
+            id = 1,
+            nama = "Nero Sparda",
             deskripsi = "Young Devil Hunter with Devil Bringer",
-            harga = 45000,
-            imageRes = R.drawable.nero
+            harga = 125000,
+            imageUrl = "https://i.pinimg.com/736x/5e/18/a9/5e18a9f452c877ff216a9f6511a85cf8.jpg"
         ),
         Chara(
-            nama = "Vergil",
+            id = 2,
+            nama = "Dante Sparda",
+            deskripsi = "The Legendary Devil Hunter",
+            harga = 150000,
+            imageUrl = "https://i.pinimg.com/1200x/73/3e/86/733e86c8d3c2859a1895ab06d8808539.jpg"
+        ),
+        Chara(
+            id = 3,
+            nama = "Vergil Sparda",
             deskripsi = "The Alpha and the Omega",
-            harga = 60000,
-            imageRes = R.drawable.vergil
+            harga = 200000,
+            imageUrl = "https://i.pinimg.com/webp87/1200x/2d/e5/a6/2de5a6e86a478e0f30bc4003d24c2cca.webp"
         )
     )
 }

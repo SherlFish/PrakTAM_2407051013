@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -44,10 +44,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.SubcomposeAsyncImage
 import com.example.praktam_2407051013.model.Chara
 import com.example.praktam_2407051013.model.CharaSource
 import com.example.praktam_2407051013.ui.theme.PrakTAM_2407051013Theme
@@ -119,13 +119,24 @@ fun CharaRowItem(chara: Chara) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            Image(
-                painter = painterResource(id = chara.imageRes),
+            // IMPLEMENTASI COIL: Memuat gambar internet dengan State Loading/Error
+            SubcomposeAsyncImage(
+                model = chara.imageUrl,
                 contentDescription = chara.nama,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                loading = {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    }
+                },
+                error = {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Warning, contentDescription = "Error", tint = Color.Gray)
+                    }
+                }
             )
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
@@ -146,9 +157,7 @@ fun CharaRowItem(chara: Chara) {
 @Composable
 fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
     var isFavorite by remember { mutableStateOf(false) }
-
     var isLoading by remember { mutableStateOf(false) }
-
     val coroutineScope = rememberCoroutineScope()
 
     Card(
@@ -161,13 +170,24 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box {
-                Image(
-                    painter = painterResource(id = chara.imageRes),
+                // IMPLEMENTASI COIL: Memuat gambar internet besar dengan State Loading/Error
+                SubcomposeAsyncImage(
+                    model = chara.imageUrl,
                     contentDescription = chara.nama,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    loading = {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        }
+                    },
+                    error = {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Warning, contentDescription = "Error Loading Gambar", tint = Color.Gray)
+                        }
+                    }
                 )
                 IconButton(
                     onClick = { isFavorite = !isFavorite },
@@ -204,11 +224,8 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
                     onClick = {
                         coroutineScope.launch {
                             isLoading = true
-
                             delay(2000)
-
                             isLoading = false
-
                             snackbarHostState.showSnackbar("Berhasil merekrut ${chara.nama}!")
                         }
                     },
