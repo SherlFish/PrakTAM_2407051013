@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
@@ -35,6 +36,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,11 +47,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
-import com.example.praktam_2407051013.model.Chara
-import com.example.praktam_2407051013.model.CharaSource
+import com.example.praktam_2407051013.model.CharaApiData
+import com.example.praktam_2407051013.ui.CharaUiState
+import com.example.praktam_2407051013.ui.CharaViewModel
 import com.example.praktam_2407051013.ui.theme.PrakTAM_2407051013Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -66,10 +70,48 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
                 ) { innerPadding ->
-                    DaftarCharaScreen(
-                        snackbarHostState = snackbarHostState,
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    val charaViewModel: CharaViewModel = viewModel()
+                    val uiState by charaViewModel.uiState.collectAsState()
+
+                    Box(modifier = Modifier.padding(innerPadding)) {
+
+                        when (val state = uiState) {
+                            is CharaUiState.Loading -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                            is CharaUiState.Error -> {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Error",
+                                        modifier = Modifier.size(48.dp),
+                                        tint = Color.Red
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(text = state.message, style = MaterialTheme.typography.bodyLarge)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(onClick = { charaViewModel.getCharaFromApi() }) {
+                                        Icon(Icons.Default.Refresh, contentDescription = "Retry")
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Coba Lagi")
+                                    }
+                                }
+                            }
+                            is CharaUiState.Success -> {
+                                DaftarCharaScreen(
+                                    listChara = state.listChara,
+                                    snackbarHostState = snackbarHostState
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -77,7 +119,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DaftarCharaScreen(snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier) {
+fun DaftarCharaScreen(
+    listChara: List<CharaApiData>,
+    snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(24.dp),
@@ -93,35 +139,34 @@ fun DaftarCharaScreen(snackbarHostState: SnackbarHostState, modifier: Modifier =
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(CharaSource.dummyChara) { chara ->
+                items(listChara.take(5)) { chara -> // Mengambil 5 data teratas buat Row
                     CharaRowItem(chara = chara)
                 }
             }
             Spacer(modifier = Modifier.height(45.dp))
             Text(
-                text = "Daftar Karakter Lengkap",
+                text = "Daftar Karakter Lengkap (API)",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-        items(CharaSource.dummyChara) { chara ->
+        items(listChara) { chara ->
             ItemChara(chara = chara, snackbarHostState = snackbarHostState)
         }
     }
 }
 
 @Composable
-fun CharaRowItem(chara: Chara) {
+fun CharaRowItem(chara: CharaApiData) {
     Card(
         modifier = Modifier.width(160.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            // IMPLEMENTASI COIL: Memuat gambar internet dengan State Loading/Error
             SubcomposeAsyncImage(
-                model = chara.imageUrl,
+                model = chara.images.jpg.imageUrl,
                 contentDescription = chara.nama,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -131,21 +176,18 @@ fun CharaRowItem(chara: Chara) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                     }
-                },
-                error = {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Warning, contentDescription = "Error", tint = Color.Gray)
-                    }
                 }
             )
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
                     text = chara.nama,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Rp ${chara.harga}",
+                    text = "ID: ${chara.id}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -155,7 +197,7 @@ fun CharaRowItem(chara: Chara) {
 }
 
 @Composable
-fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
+fun ItemChara(chara: CharaApiData, snackbarHostState: SnackbarHostState) {
     var isFavorite by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -170,9 +212,8 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box {
-                // IMPLEMENTASI COIL: Memuat gambar internet besar dengan State Loading/Error
                 SubcomposeAsyncImage(
-                    model = chara.imageUrl,
+                    model = chara.images.jpg.imageUrl,
                     contentDescription = chara.nama,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -181,11 +222,6 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
                     loading = {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                        }
-                    },
-                    error = {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Warning, contentDescription = "Error Loading Gambar", tint = Color.Gray)
                         }
                     }
                 )
@@ -210,13 +246,10 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = chara.deskripsi,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Harga Sewa: Rp ${chara.harga}",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = chara.deskripsi ?: "Tidak ada deskripsi untuk karakter ini.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -244,13 +277,5 @@ fun ItemChara(chara: Chara, snackbarHostState: SnackbarHostState) {
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DaftarCharaPreview() {
-    PrakTAM_2407051013Theme {
-        DaftarCharaScreen(snackbarHostState = remember { SnackbarHostState() })
     }
 }
